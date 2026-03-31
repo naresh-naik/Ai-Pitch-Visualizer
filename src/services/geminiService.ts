@@ -16,7 +16,8 @@ export const VISUAL_STYLES = [
 ];
 
 function getAI() {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "";
+  return new GoogleGenAI({ apiKey });
 }
 
 export async function segmentAndEnhance(text: string, styleKeyword: string): Promise<{ scenes: Scene[]; characterLock: string }> {
