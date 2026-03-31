@@ -24,8 +24,8 @@ The Pitch Visualizer is an AI-powered storyboard engine designed to transform na
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd pitch-visualizer
+   git clone https://github.com/naresh-naik/Ai-Pitch-Visualizer.git
+   cd Ai-Pitch-Visualizer
    ```
 
 2. **Install dependencies:**
@@ -34,17 +34,41 @@ The Pitch Visualizer is an AI-powered storyboard engine designed to transform na
    ```
 
 3. **Environment Setup:**
-   Create a `.env` file in the root directory and add your Gemini API key:
-   ```env
-   VITE_GEMINI_API_KEY="your_api_key_here"
+   Copy `.env.example` to `.env` and add your Gemini API key:
+   ```bash
+   cp .env.example .env
    ```
-   *(Note: In the provided AI Studio environment, this was handled via `process.env.GEMINI_API_KEY`, but for standard Vite local development, use the `VITE_` prefix and update the initialization in `geminiService.ts` to use `import.meta.env.VITE_GEMINI_API_KEY`).*
+   Then edit `.env` and set your key:
+   ```env
+   VITE_GEMINI_API_KEY=your_api_key_here
+   ```
+   Get a free API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+
+   > **Note for Google AI Studio users:** The platform automatically injects `GEMINI_API_KEY` at runtime—no `.env` file is needed. For all other environments (local dev, CI, etc.), use `VITE_GEMINI_API_KEY` which is the standard Vite convention for exposing env vars to browser code.
 
 4. **Run the development server:**
    ```bash
    npm run dev
    ```
-   Open `http://localhost:5173` in your browser.
+   Open `http://localhost:3000` in your browser.
+
+## 🤖 AI Model Configuration
+
+The app uses two Gemini models, each configurable via environment variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_TEXT_MODEL` | `gemini-3-flash-preview` | Narrative segmentation & prompt engineering |
+| `VITE_IMAGE_MODEL` | `gemini-2.5-flash-image` | Image generation per scene |
+
+To swap a model, add the variable to your `.env` file:
+```env
+VITE_GEMINI_API_KEY=your_api_key_here
+VITE_TEXT_MODEL=gemini-2.0-flash
+VITE_IMAGE_MODEL=gemini-2.5-flash-image
+```
+
+> **Current models:** `gemini-3-flash-preview` handles all text tasks (segmentation, character lock extraction, prompt enrichment). `gemini-2.5-flash-image` generates the storyboard images with a 16:9 aspect ratio.
 
 ## 🧠 Methodology: Prompt Engineering Design Choices
 
