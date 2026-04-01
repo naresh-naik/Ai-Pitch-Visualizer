@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
@@ -38,7 +38,59 @@ export default function App() {
   const [progress, setProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const storyboardRef = useRef<HTMLDivElement>(null);
+
+  // Check for saved session on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('pitch-visualizer-autosave');
+    if (saved) {
+      setShowRestorePrompt(true);
+    }
+  }, []);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (showRestorePrompt) return; // Don't overwrite while asking to restore
+    
+    if (inputText.trim() || scenes.length > 0) {
+      const timer = setTimeout(() => {
+        localStorage.setItem('pitch-visualizer-autosave', JSON.stringify({
+          inputText,
+          selectedStyle,
+          scenes,
+          characterLock,
+          // If they refresh during generation, revert to input step
+          currentStep: currentStep === 'generating' ? 'input' : currentStep
+        }));
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      localStorage.removeItem('pitch-visualizer-autosave');
+    }
+  }, [inputText, selectedStyle, scenes, characterLock, currentStep, showRestorePrompt]);
+
+  const restoreSession = () => {
+    try {
+      const saved = localStorage.getItem('pitch-visualizer-autosave');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setInputText(parsed.inputText || "");
+        if (parsed.selectedStyle) setSelectedStyle(parsed.selectedStyle);
+        setScenes(parsed.scenes || []);
+        setCharacterLock(parsed.characterLock || "");
+        setCurrentStep(parsed.currentStep || "input");
+      }
+    } catch (e) {
+      console.error("Failed to restore session", e);
+    }
+    setShowRestorePrompt(false);
+  };
+
+  const discardSession = () => {
+    localStorage.removeItem('pitch-visualizer-autosave');
+    setShowRestorePrompt(false);
+  };
 
   const handleDownload = async () => {
     if (!storyboardRef.current) return;
@@ -172,6 +224,38 @@ export default function App() {
           )}
         </header>
 
+        <AnimatePresence>
+          {showRestorePrompt && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -20, height: 0 }}
+              className="mb-8 overflow-hidden"
+            >
+              <div className="p-4 bg-orange-900/20 border border-orange-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+                <div className="flex items-center gap-3 text-orange-400">
+                  <RefreshCw size={20} />
+                  <p className="text-sm font-medium">We found an unsaved storyboard from your last visit.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={discardSession}
+                    className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                  >
+                    Discard
+                  </button>
+                  <button 
+                    onClick={restoreSession}
+                    className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors font-medium shadow-lg shadow-orange-500/20"
+                  >
+                    Restore Session
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
           {currentStep === "input" && (
             <motion.div
@@ -179,10 +263,10 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+              className="flex flex-col gap-8 max-w-4xl mx-auto"
             >
               {/* Input Area */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-6">
                 <div className="relative">
                   <textarea
                     value={inputText}
@@ -204,7 +288,7 @@ export default function App() {
                     <h2 className="text-sm font-semibold uppercase tracking-wider">Visual Style</h2>
                   </div>
                   
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {VISUAL_STYLES.map((style) => (
                       <button
                         key={style.id}

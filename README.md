@@ -1,83 +1,86 @@
-# 🎨 The Pitch Visualizer
+# 🎨 AI Pitch Visualizer
 
-The Pitch Visualizer is an AI-powered storyboard engine designed to transform narrative text—like customer success stories or sales pitches—into compelling, multi-panel visual sequences. Built as a submission for the Darwix AI engineering challenge.
+## 📖 Project Description & Capabilities
+The **AI Pitch Visualizer** is an intelligent storyboarding engine designed to transform narrative text (such as customer success stories, sales pitches, or short stories) into compelling, multi-panel visual sequences. Built as a submission for the Darwix AI engineering challenge, it bridges the gap between textual ideas and visual presentations.
 
-## ✨ Features & "Wow" Factors Implemented
+### Core Capabilities:
+*   **Intelligent Narrative Segmentation:** Algorithmically deconstructs long-form text into logical, distinct scenes.
+*   **Visual Consistency (Character Lock):** Extracts a detailed physical description of the main subject to ensure they look identical across all generated panels.
+*   **Multi-Style Generation:** Supports 6 distinct artistic styles (Digital Art, Photorealistic, Hand-drawn Sketch, Watercolor, Cyberpunk, Studio Ghibli).
+*   **Resilient Auto-Save:** Automatically saves progress to local storage, allowing users to recover unsaved storyboards if they accidentally close the tab.
+*   **Export Ready:** Native PDF exporting to instantly download the generated storyboard for presentations.
 
-*   **Intelligent Narrative Segmentation:** Uses an LLM to algorithmically deconstruct input text into logical scenes.
-*   **LLM-Powered Prompt Refinement:** Original sentences are never used verbatim. A secondary LLM rewrites them into highly descriptive, visually rich prompts optimized for image generation.
-*   **Visual Consistency (Character Lock):** Implements an advanced prompt engineering technique to extract a "Character Lock" (a detailed physical description of the subject) from the overall narrative, prepending it to every scene to ensure the main character looks identical across all panels.
-*   **User-Selectable Styles:** Users can choose from 6 distinct artistic styles (e.g., Photorealistic, Studio Ghibli, Cyberpunk) before generation.
-*   **Dynamic, Animated UI:** Built with React and Framer Motion, featuring a smooth, panel-by-panel reveal, real-time progress tracking, and a highly polished dark-mode aesthetic.
-*   **Export Ready:** Includes native PDF exporting to instantly download the generated storyboard for presentations.
+---
 
-## 🛠️ Technical Stack
+## ⚙️ Step-by-Step Setup & Execution
 
-*   **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4
-*   **Animations:** Motion (Framer Motion)
-*   **AI / LLMs:** `@google/genai` SDK
-    *   *Text/Prompt Engine:* `gemini-3-flash-preview`
-    *   *Image Generation:* `gemini-2.5-flash-image`
-*   **Export:** `html-to-image`, `jspdf`
+Follow these instructions from start to finish to get the application running on your local machine.
 
-## 🚀 Setup & Execution Instructions
+### Phase 1: Prerequisites
+Before you begin, ensure you have the following installed on your system:
+1. **Node.js** (v20.0.0 or higher is **required**). You can download it from [nodejs.org](https://nodejs.org/).
+2. **Git** installed on your machine.
 
+### Phase 2: Installation
 1. **Clone the repository:**
+   Open your terminal and run:
    ```bash
-   git clone https://github.com/naresh-naik/Ai-Pitch-Visualizer.git
+   git clone <YOUR_GITHUB_REPO_URL>
+   ```
+2. **Navigate into the project directory:**
+   ```bash
    cd Ai-Pitch-Visualizer
    ```
-
-2. **Install dependencies:**
+3. **Install dependencies:**
+   Run the following command to install all required packages:
    ```bash
    npm install
    ```
 
-3. **Environment Setup:**
-   Copy `.env.example` to `.env` and add your Gemini API key:
+### Phase 3: API Key Management (Environment Setup)
+This application requires an API key to communicate with the AI models. 
+
+1. **Create your environment file:**
+   In the root directory of the project, copy the provided template file to create your own hidden `.env` file:
    ```bash
    cp .env.example .env
    ```
-   Then edit `.env` and set your key:
-   ```env
-   VITE_GEMINI_API_KEY=your_api_key_here
-   ```
-   Get a free API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+2. **Configure your keys:**
+   Open the newly created `.env` file in your code editor. You will see options for multiple providers. 
+   * **You only need to provide ONE key** (Google Gemini is the default and recommended engine for this build).
+   * Paste your API key inside the quotes. For example:
+     `VITE_GEMINI_API_KEY="AIzaSyYourActualKeyHere..."`
+   * Leave the other placeholders exactly as they are.
+   
+   *⚠️ Security Note: Never commit your actual `.env` file to GitHub. The `.gitignore` file is already configured to prevent this.*
 
-   > **Note for Google AI Studio users:** The platform automatically injects `GEMINI_API_KEY` at runtime—no `.env` file is needed. For all other environments (local dev, CI, etc.), use `VITE_GEMINI_API_KEY` which is the standard Vite convention for exposing env vars to browser code.
-
-4. **Run the development server:**
+### Phase 4: Execution
+1. **Start the development server:**
    ```bash
    npm run dev
    ```
-   Open `http://localhost:3000` in your browser.
+2. **Open the application:**
+   Open your web browser and navigate to `http://localhost:5173` (or the port provided in your terminal).
+3. **Usage:**
+   * Paste a story into the text area.
+   * Select a visual style from the right-hand menu.
+   * Click "Generate Storyboard" and watch the AI segment and illustrate your pitch!
 
-## 🤖 AI Model Configuration
+---
 
-The app uses two Gemini models, each configurable via environment variables:
+## 🧠 Design Choices & Prompt Engineering Methodology
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `VITE_TEXT_MODEL` | `gemini-3-flash-preview` | Narrative segmentation & prompt engineering |
-| `VITE_IMAGE_MODEL` | `gemini-2.5-flash-image` | Image generation per scene |
+### 1. The "Two-Stage Prompt Architecture" (Prompt Engineering)
+The core challenge of AI storyboarding is **visual consistency**. If you prompt an image model with "A man in an office" for panel 1, and "A man presenting" for panel 2, the AI will generate two completely different-looking men. 
 
-To swap a model, add the variable to your `.env` file:
-```env
-VITE_GEMINI_API_KEY=your_api_key_here
-VITE_TEXT_MODEL=gemini-2.0-flash
-VITE_IMAGE_MODEL=gemini-2.5-flash-image
-```
+To solve this, I designed a Two-Stage Prompt Architecture:
+*   **Stage 1 (The Character Lock):** The text LLM (`gemini-3-flash`) analyzes the *entire* narrative first. It identifies the main subject and generates a `characterLock`—a rigid, highly detailed physical description (e.g., *"A 35-year-old woman with short curly brown hair, wearing a blue blazer and glasses"*).
+*   **Stage 2 (Scene Isolation):** The LLM then breaks the text into scenes, generating prompts that focus *strictly* on the environment, action, and camera angle, ignoring the character's physical description.
+*   **The Merge:** Before calling the image generation API, the application programmatically concatenates: `[Character Lock] + [Style Keyword] + [Scene Prompt]`. 
 
-> **Current models:** `gemini-3-flash-preview` handles all text tasks (segmentation, character lock extraction, prompt enrichment). `gemini-2.5-flash-image` generates the storyboard images with a 16:9 aspect ratio.
+This ensures the image model receives the exact same physical constraints for every single panel, resulting in a cohesive, professional storyboard.
 
-## 🧠 Methodology: Prompt Engineering Design Choices
-
-The core challenge of AI storyboarding is **visual consistency**. If you simply prompt an image model with "A man in an office," the man will look completely different in the next panel. 
-
-To solve this, I designed a **Two-Stage Prompt Architecture**:
-
-1.  **Stage 1: The Character Lock:** The text LLM (`gemini-3-flash`) analyzes the *entire* narrative first. It identifies the subject and generates a `characterLock`—a rigid, highly detailed physical description (e.g., "A 35-year-old woman with short curly brown hair, wearing a blue blazer and glasses").
-2.  **Stage 2: Scene Isolation:** The LLM then breaks the text into scenes, generating prompts that focus *strictly* on the environment, action, and camera angle, ignoring the character's physical description.
-3.  **The Merge:** Before calling the image generation API, the application programmatically concatenates the `characterLock` + `styleKeyword` + `scenePrompt`. 
-
-This ensures the image model receives the exact same physical constraints for every single panel, resulting in a cohesive, professional storyboard suitable for enterprise sales teams.
+### 2. UI/UX Design Choices
+*   **Vertical Stack Layout:** Designed to give the text input maximum breathing room while keeping controls easily accessible on all screen sizes.
+*   **Continuous Auto-Save:** Implemented a debounced `localStorage` caching system. AI generation takes time and effort; ensuring the user never loses their prompt or generated images due to an accidental refresh is a critical UX choice.
+*   **Dark Mode Aesthetic:** Chosen to make the generated, vibrant storyboard images "pop" off the screen, mimicking a professional presentation environment.
