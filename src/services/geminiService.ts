@@ -77,7 +77,10 @@ ${text}`,
 
   try {
     const response = await fetchWithRetry(generate);
-    const data = JSON.parse(response.text || "{}");
+    let rawText = response.text || "{}";
+    // Clean up potential markdown formatting
+    rawText = rawText.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+    const data = JSON.parse(rawText);
     const characterLock = data.characterLock || "";
     const scenes = data.scenes || [];
     
@@ -100,7 +103,11 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
-      return await fn();
+      // Add a 30-second timeout to prevent hanging indefinitely
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000);
+      });
+      return await Promise.race([fn(), timeoutPromise]);
     } catch (error: any) {
       attempt++;
       const isRateLimit = error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("quota");

@@ -160,7 +160,7 @@ export default function App() {
       for (let i = 0; i < updatedScenes.length; i++) {
         // Proactive delay between image generation requests to respect API rate limits
         if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         const imageUrl = await generateImageForScene(updatedScenes[i].enhancedPrompt);
@@ -320,7 +320,7 @@ export default function App() {
                 </div>
 
                 <div className="p-6 border border-white/5 rounded-3xl bg-white/[0.02] text-white/40 text-sm leading-relaxed italic">
-                  "The Pitch Visualizer uses Gemini AI to deconstruct your narrative into key scenes and generate visually consistent artwork for each moment."
+                  "The Pitch Visualizer uses advanced AI models to deconstruct your narrative into key scenes and generate visually consistent artwork for each moment."
                 </div>
               </div>
             </motion.div>
@@ -349,6 +349,8 @@ export default function App() {
                 <h2 className="text-3xl font-bold tracking-tight">Visualizing your story...</h2>
                 <p className="text-white/50">
                   Our AI is currently segmenting your narrative and painting each scene with precision.
+                  <br />
+                  <span className="text-orange-500/80 text-sm mt-2 block">This process can take up to a minute depending on the length of your story.</span>
                 </p>
                 
                 <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden mt-8">
