@@ -145,8 +145,9 @@ export async function generateImageForScene(prompt: string): Promise<string | un
         return `data:image/png;base64,${part.inlineData.data}`;
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to generate image:", error);
+    throw new Error(`Image Generation Failed: ${error.message}`);
   }
   return undefined;
 }
