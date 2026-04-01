@@ -43,9 +43,9 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay
   let attempt = 0;
   while (attempt < maxRetries) {
     try {
-      // Add a 30-second timeout to prevent hanging indefinitely
+      // Add a 120-second timeout to prevent hanging indefinitely
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000);
+        setTimeout(() => reject(new Error("Request timed out after 120 seconds")), 120000);
       });
       return await Promise.race([fn(), timeoutPromise]);
     } catch (error: any) {
