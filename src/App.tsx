@@ -146,6 +146,11 @@ export default function App() {
     try {
       // Step 1: Segment and Enhance
       const { scenes: segmentedScenes, characterLock: generatedLock } = await segmentAndEnhance(inputText, selectedStyle.keyword);
+      
+      if (!segmentedScenes || segmentedScenes.length === 0) {
+        throw new Error("Failed to generate scenes. Please check your API key and try again.");
+      }
+
       setCharacterLock(generatedLock);
       setScenes(segmentedScenes);
       setProgress(30);

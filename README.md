@@ -46,11 +46,18 @@ This application requires an API key to communicate with the AI models.
    cp .env.example .env
    ```
 2. **Configure your keys:**
-   Open the newly created `.env` file in your code editor. You will see options for multiple providers. 
-   * **You only need to provide ONE key** (Google Gemini is the default and recommended engine for this build).
-   * Paste your API key inside the quotes. For example:
-     `VITE_GEMINI_API_KEY="AIzaSyYourActualKeyHere..."`
+   You can open the newly created `.env` file in your code editor, OR you can do it entirely from your terminal.
+   
+   **Option A: Using a Code Editor**
+   * Open the `.env` file.
+   * Paste your API key inside the quotes for `VITE_GEMINI_API_KEY`.
    * Leave the other placeholders exactly as they are.
+
+   **Option B: Terminal Only (Mac/Linux)**
+   Run this command, replacing `YOUR_ACTUAL_API_KEY` with your real Gemini key:
+   ```bash
+   sed -i '' 's/"your_gemini_api_key_here"/"YOUR_ACTUAL_API_KEY"/' .env
+   ```
    
    *⚠️ Security Note: Never commit your actual `.env` file to GitHub. The `.gitignore` file is already configured to prevent this.*
 

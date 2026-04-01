@@ -16,7 +16,15 @@ export const VISUAL_STYLES = [
 ];
 
 function getAI() {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  // Safely check for both Vite's import.meta.env and Node's process.env
+  let apiKey = "";
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+    apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  } else if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+    apiKey = process.env.GEMINI_API_KEY;
+  }
+  
+  return new GoogleGenAI({ apiKey });
 }
 
 export async function segmentAndEnhance(text: string, styleKeyword: string): Promise<{ scenes: Scene[]; characterLock: string }> {
