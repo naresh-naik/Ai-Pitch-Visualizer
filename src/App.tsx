@@ -5,8 +5,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import { jsPDF } from "jspdf";
+import { saveAs } from "file-saver";
 import { 
   Sparkles, 
   Image as ImageIcon, 
@@ -103,9 +104,9 @@ export default function App() {
       const width = element.offsetWidth;
       const height = element.offsetHeight;
 
-      const dataUrl = await toPng(element, {
-        quality: 1.0,
-        pixelRatio: 2,
+      const dataUrl = await toJpeg(element, {
+        quality: 0.95,
+        pixelRatio: 1.5,
         backgroundColor: '#0a0a0a',
         style: {
           transform: 'scale(1)',
@@ -119,8 +120,11 @@ export default function App() {
         format: [width, height]
       });
 
-      pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
-      pdf.save("pitch-storyboard.pdf");
+      pdf.addImage(dataUrl, 'JPEG', 0, 0, width, height);
+      
+      // Use file-saver to ensure the file is downloaded with the correct name
+      const pdfBlob = pdf.output('blob');
+      saveAs(pdfBlob, "pitch-storyboard.pdf");
     } catch (error) {
       console.error("Download failed:", error);
       alert("Failed to generate PDF. Please try again.");
