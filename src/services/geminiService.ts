@@ -89,9 +89,9 @@ ${text}`,
         enhancedPrompt: `${characterLock}. ${scene.enhancedPrompt}`,
       }))
     };
-  } catch (e) {
+  } catch (e: any) {
     console.error("Failed to parse scenes", e);
-    return { scenes: [], characterLock: "" };
+    throw new Error(e.message || "Failed to communicate with the AI model. Please check your API key.");
   }
 }
 

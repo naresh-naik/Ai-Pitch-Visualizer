@@ -170,9 +170,9 @@ export default function App() {
       }
 
       setCurrentStep("storyboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Generation failed:", error);
-      alert("Something went wrong during generation. Please try again.");
+      alert(`Error: ${error.message || "Something went wrong during generation. Please check your API key and try again."}`);
       setCurrentStep("input");
     } finally {
       setIsLoading(false);
