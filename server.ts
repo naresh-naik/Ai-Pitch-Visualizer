@@ -10,9 +10,10 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // API routes FIRST
   app.post("/api/generate-scenes", async (req, res) => {
@@ -53,7 +54,13 @@ ${text}`;
         
       } else {
         // Default to Gemini
-        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+        apiKey = apiKey.replace(/^["']|["']$/g, "").trim();
+        
+        if (!apiKey) {
+          throw new Error("Gemini API key is missing. Please set VITE_GEMINI_API_KEY.");
+        }
+        
         const ai = new GoogleGenAI({ apiKey });
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
@@ -164,7 +171,13 @@ ${text}`;
         
       } else {
         // Default to Gemini
-        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+        apiKey = apiKey.replace(/^["']|["']$/g, "").trim();
+        
+        if (!apiKey) {
+          throw new Error("Gemini API key is missing. Please set VITE_GEMINI_API_KEY.");
+        }
+        
         const ai = new GoogleGenAI({ apiKey });
         
         const parts: any[] = [];
