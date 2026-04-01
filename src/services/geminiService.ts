@@ -1,5 +1,3 @@
-import { GoogleGenAI, Type } from "@google/genai";
-
 export interface Scene {
   originalText: string;
   enhancedPrompt: string;
@@ -15,83 +13,25 @@ export const VISUAL_STYLES = [
   { id: "studio-ghibli", name: "Studio Ghibli", keyword: "Studio Ghibli style, whimsical, lush landscapes, anime aesthetic, Joe Hisaishi vibe" },
 ];
 
-function getAI() {
-  // Safely check for both Vite's import.meta.env and Node's process.env
-  let apiKey = "";
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
-    apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  } else if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-    apiKey = process.env.GEMINI_API_KEY;
-  }
-  
-  return new GoogleGenAI({ apiKey });
-}
-
-export async function segmentAndEnhance(text: string, styleKeyword: string): Promise<{ scenes: Scene[]; characterLock: string }> {
-  const ai = getAI();
-  
+export async function segmentAndEnhance(text: string, styleKeyword: string, provider: string = "gemini"): Promise<{ scenes: Scene[]; characterLock: string }> {
   const generate = async () => {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Analyze the following narrative text and break it into 3-5 key logical scenes. 
-
-First, identify the main character(s) and create a "characterLock": a highly detailed, consistent physical description (age, hair, clothing, ethnicity, etc.) that will be used to keep the character's appearance identical across all images.
-
-Then, for each scene, provide:
-1. The original text segment.
-2. A highly descriptive, visual prompt for an image generation model that captures the action, setting, lighting, and mood of that scene in the style of: ${styleKeyword}. 
-(Note: The characterLock will be automatically prepended to your scene prompt, so focus the scene prompt on the action, environment, and camera angles).
-
-Narrative Text:
-${text}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            characterLock: { 
-              type: Type.STRING, 
-              description: "A detailed, consistent physical description of the main character(s) to be used across all panels." 
-            },
-            scenes: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  originalText: { type: Type.STRING },
-                  enhancedPrompt: { 
-                    type: Type.STRING, 
-                    description: "The visual prompt for this specific scene. Do not include the character description here, it will be prepended automatically." 
-                  },
-                },
-                required: ["originalText", "enhancedPrompt"],
-              },
-            },
-          },
-          required: ["characterLock", "scenes"],
-        },
-      },
+    const response = await fetch("/api/generate-scenes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, styleKeyword, provider })
     });
-    return response;
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to generate scenes");
+    }
+    
+    return await response.json();
   };
 
   try {
-    const response = await fetchWithRetry(generate);
-    let rawText = response.text || "{}";
-    // Clean up potential markdown formatting
-    rawText = rawText.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
-    const data = JSON.parse(rawText);
-    const characterLock = data.characterLock || "";
-    const scenes = data.scenes || [];
-    
-    return {
-      characterLock,
-      scenes: scenes.map((scene: any) => ({
-        originalText: scene.originalText,
-        // Prepend the character lock to ensure visual consistency across all generated images
-        enhancedPrompt: `${characterLock}. ${scene.enhancedPrompt}`,
-      }))
-    };
+    const data = await fetchWithRetry(generate);
+    return data;
   } catch (e: any) {
     console.error("Failed to parse scenes", e);
     throw new Error(e.message || "Failed to communicate with the AI model. Please check your API key.");
@@ -124,37 +64,27 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay
   throw new Error("Max retries reached");
 }
 
-export async function generateImageForScene(prompt: string): Promise<string | undefined> {
-  const ai = getAI();
-  
+export async function generateImageForScene(prompt: string, provider: string = "gemini", referenceImage?: string): Promise<string | undefined> {
   const generate = async () => {
-    return await ai.models.generateContent({
-      model: "gemini-2.5-flash-image",
-      contents: {
-        parts: [
-          {
-            text: prompt,
-          },
-        ],
-      },
-      config: {
-        imageConfig: {
-          aspectRatio: "16:9",
-        },
-      },
+    const response = await fetch("/api/generate-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, provider, referenceImage })
     });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to generate image");
+    }
+    
+    const data = await response.json();
+    return data.imageUrl;
   };
 
   try {
-    const response = await fetchWithRetry(generate);
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
-      }
-    }
+    return await fetchWithRetry(generate);
   } catch (error: any) {
     console.error("Failed to generate image:", error);
     throw new Error(`Image Generation Failed: ${error.message}`);
   }
-  return undefined;
 }

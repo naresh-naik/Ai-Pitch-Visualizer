@@ -32,8 +32,10 @@ import {
 export default function App() {
   const [inputText, setInputText] = useState("");
   const [selectedStyle, setSelectedStyle] = useState(VISUAL_STYLES[0]);
+  const [provider, setProvider] = useState("gemini");
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [characterLock, setCharacterLock] = useState<string>("");
+  const [characterImage, setCharacterImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<"input" | "generating" | "storyboard">("input");
   const [progress, setProgress] = useState(0);
@@ -59,8 +61,10 @@ export default function App() {
         localStorage.setItem('pitch-visualizer-autosave', JSON.stringify({
           inputText,
           selectedStyle,
+          provider,
           scenes,
           characterLock,
+          characterImage,
           // If they refresh during generation, revert to input step
           currentStep: currentStep === 'generating' ? 'input' : currentStep
         }));
@@ -69,7 +73,7 @@ export default function App() {
     } else {
       localStorage.removeItem('pitch-visualizer-autosave');
     }
-  }, [inputText, selectedStyle, scenes, characterLock, currentStep, showRestorePrompt]);
+  }, [inputText, selectedStyle, provider, scenes, characterLock, characterImage, currentStep, showRestorePrompt]);
 
   const restoreSession = () => {
     try {
@@ -78,8 +82,10 @@ export default function App() {
         const parsed = JSON.parse(saved);
         setInputText(parsed.inputText || "");
         if (parsed.selectedStyle) setSelectedStyle(parsed.selectedStyle);
+        if (parsed.provider) setProvider(parsed.provider);
         setScenes(parsed.scenes || []);
         setCharacterLock(parsed.characterLock || "");
+        setCharacterImage(parsed.characterImage || null);
         setCurrentStep(parsed.currentStep || "input");
       }
     } catch (e) {
@@ -149,7 +155,7 @@ export default function App() {
 
     try {
       // Step 1: Segment and Enhance
-      const { scenes: segmentedScenes, characterLock: generatedLock } = await segmentAndEnhance(inputText, selectedStyle.keyword);
+      const { scenes: segmentedScenes, characterLock: generatedLock } = await segmentAndEnhance(inputText, selectedStyle.keyword, provider);
       
       if (!segmentedScenes || segmentedScenes.length === 0) {
         throw new Error("Failed to generate scenes. Please check your API key and try again.");
@@ -157,9 +163,21 @@ export default function App() {
 
       setCharacterLock(generatedLock);
       setScenes(segmentedScenes);
+      setProgress(20);
+
+      // Step 2: Generate Character Reference Image
+      let charImgUrl: string | undefined = undefined;
+      if (generatedLock) {
+        try {
+          charImgUrl = await generateImageForScene(`Character concept art portrait, full body, plain background. ${generatedLock}. Style: ${selectedStyle.keyword}`, provider);
+          if (charImgUrl) setCharacterImage(charImgUrl);
+        } catch (e) {
+          console.error("Failed to generate character reference image", e);
+        }
+      }
       setProgress(30);
 
-      // Step 2: Generate Images one by one
+      // Step 3: Generate Images one by one
       const updatedScenes = [...segmentedScenes];
       for (let i = 0; i < updatedScenes.length; i++) {
         // Proactive delay between image generation requests to respect API rate limits
@@ -167,7 +185,7 @@ export default function App() {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
-        const imageUrl = await generateImageForScene(updatedScenes[i].enhancedPrompt);
+        const imageUrl = await generateImageForScene(updatedScenes[i].enhancedPrompt, provider, charImgUrl);
         updatedScenes[i] = { ...updatedScenes[i], imageUrl };
         setScenes([...updatedScenes]);
         setProgress(30 + ((i + 1) / updatedScenes.length) * 70);
@@ -186,6 +204,7 @@ export default function App() {
   const reset = () => {
     setScenes([]);
     setCharacterLock("");
+    setCharacterImage(null);
     setCurrentStep("input");
     setProgress(0);
   };
@@ -365,7 +384,7 @@ export default function App() {
                   />
                 </div>
                 <div className="text-xs font-mono text-orange-500/60 uppercase tracking-widest">
-                  {progress < 30 ? "Segmenting Narrative" : `Generating Panel ${Math.min(scenes.filter(s => s.imageUrl).length + 1, scenes.length)} of ${scenes.length}`}
+                  {progress < 20 ? "Segmenting Narrative" : progress < 30 ? "Generating Character Reference" : `Generating Panel ${Math.min(scenes.filter(s => s.imageUrl).length + 1, scenes.length)} of ${scenes.length}`}
                 </div>
               </div>
             </motion.div>
@@ -383,14 +402,21 @@ export default function App() {
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mb-4 p-6 bg-orange-900/10 border border-orange-500/20 rounded-2xl print:hidden"
+                    className="mb-4 p-6 bg-orange-900/10 border border-orange-500/20 rounded-2xl print:hidden flex flex-col md:flex-row gap-6 items-center"
                   >
-                    <h3 className="text-orange-400 font-semibold mb-2 flex items-center gap-2 uppercase tracking-widest text-xs">
-                      <Lock size={14} /> Character Lock Active
-                    </h3>
-                    <p className="text-sm text-gray-300 italic">
-                      "{characterLock}"
-                    </p>
+                    {characterImage && (
+                      <div className="w-32 h-32 shrink-0 rounded-xl overflow-hidden border border-orange-500/30 shadow-lg shadow-orange-500/20">
+                        <img src={characterImage} alt="Character Reference" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-orange-400 font-semibold mb-2 flex items-center gap-2 uppercase tracking-widest text-xs">
+                        <Lock size={14} /> Character Lock Active
+                      </h3>
+                      <p className="text-sm text-gray-300 italic">
+                        "{characterLock}"
+                      </p>
+                    </div>
                   </motion.div>
                 )}
                 
