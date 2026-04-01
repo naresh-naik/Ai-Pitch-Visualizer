@@ -232,6 +232,16 @@ ${text}`;
     });
   }
 
+  // Global error handler to ensure JSON responses for API errors
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error("Global error handler caught:", err);
+    if (req.path.startsWith('/api/')) {
+      res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
+    } else {
+      next(err);
+    }
+  });
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
