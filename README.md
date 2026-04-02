@@ -53,11 +53,26 @@ This application requires an API key to communicate with the AI models.
    * Paste your API key inside the quotes for `VITE_GEMINI_API_KEY`.
    * Leave the other placeholders exactly as they are.
 
-   **Option B: Terminal Only (Mac/Linux)**
-   Run this command, replacing `YOUR_ACTUAL_API_KEY` with your real Gemini key:
+ **Option B: Terminal Only (Mac/Linux)**
+   Run one of the following commands, replacing `YOUR_ACTUAL_API_KEY` with your real key:
+
+   **Gemini**
    ```bash
    sed -i '' 's/"your_gemini_api_key_here"/"YOUR_ACTUAL_API_KEY"/' .env
    ```
+   **OpenAI**
+   ```bash
+   sed -i '' 's/"your_openai_api_key_here"/"YOUR_ACTUAL_API_KEY"/' .env
+   ```
+
+   **Stability AI**
+   ```bash
+   sed -i '' 's/"your_stability_api_key_here"/"YOUR_ACTUAL_API_KEY"/' .env
+   ```
+
+   **Hugging Face**
+   ```bash
+   sed -i '' 's/"your_huggingface_api_key_here"/"YOUR_ACTUAL_API_KEY"/' .env
    
    *⚠️ Security Note: Never commit your actual `.env` file to GitHub. The `.gitignore` file is already configured to prevent this.*
 
